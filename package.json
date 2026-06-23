@@ -1,21 +1,21 @@
 {
-	"name": "grok-discord-bot",
-	"version": "1.0.0",
-	"description": "Discord bot that interfaces with xAI Grok",
-	"main": "dist/index.js",
-	"type": "module",
-	"scripts": {
-		"dev": "tsx watch src/index.ts",
-		"build": "tsc",
-		"start": "node dist/index.js"
-	},
-	"dependencies": {
-		"discord.js": "^14.21.0",
-		"dotenv": "^17.2.1"
-	},
-	"devDependencies": {
-		"@types/node": "^24.0.10",
-		"tsx": "^4.20.3",
-		"typescript": "^5.9.2"
-	}
+  "name": "grok-discord-bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.21.0",
+    "dotenv": "^17.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.10",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2"
+  }
 }

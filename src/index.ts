@@ -1,7 +1,7 @@
+import "dotenv/config";
 import {
 	Client,
 	GatewayIntentBits,
-	Partials,
 	Message,
 } from "discord.js";
 
@@ -9,9 +9,7 @@ const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMessages,
-		GatewayIntentBits.MessageContent,
 	],
-	partials: [Partials.Channel],
 });
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN!;
@@ -27,7 +25,7 @@ async function askGrok(prompt: string): Promise<string> {
 				"Content-Type": "application/json",
 			},
 			body: JSON.stringify({
-				model: "grok-4",
+				model: "grok-build-0.1",
 				messages: [
 					{
 						role: "system",
@@ -109,4 +107,5 @@ client.on("messageCreate", async (message: Message) => {
 	}
 });
 
+console.log("Token loaded:", process.env.DISCORD_TOKEN?.substring(0, 10));
 client.login(DISCORD_TOKEN);
