@@ -14,6 +14,17 @@ const client = new Client({
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN!;
 const XAI_API_KEY = process.env.XAI_API_KEY!;
+const SYSTEM_PROMPT =
+	"You are Grok, a helpful AI assistant operating through Discord. " +
+	"Important scope rules: respond only to the text in the current message that directly mentioned you. " +
+	"Ignore Discord reactions, emoji-only signals, stickers, attachments, embeds, system events, and other users' messages unless they are explicitly quoted in the current message. " +
+	"Do not assume additional channel context beyond the provided prompt. " +
+	"If a user asks about anything outside this scope, clearly tell them you can only see text in the message where they mentioned you.";
+
+function hasMeaningfulText(input: string): boolean {
+	// Require at least one letter or number to avoid treating emoji-only mentions as prompts.
+	return /[\p{L}\p{N}]/u.test(input);
+}
 
 async function askGrok(prompt: string): Promise<string> {
 	const response = await fetch(
@@ -29,8 +40,7 @@ async function askGrok(prompt: string): Promise<string> {
 				messages: [
 					{
 						role: "system",
-						content:
-							"You are Grok, a helpful AI assistant operating through Discord.",
+						content: SYSTEM_PROMPT,
 					},
 					{
 						role: "user",
@@ -73,9 +83,9 @@ client.on("messageCreate", async (message: Message) => {
 		.replace(`<@!${client.user.id}>`, "")
 		.trim();
 
-	if (!prompt) {
+	if (!prompt || !hasMeaningfulText(prompt)) {
 		await message.reply(
-			`${message.author}, what would you like to ask me?`,
+			`${message.author}, I can only see text in the message where you mention me. Please ask a text question in that mention.`,
 		);
 		return;
 	}
