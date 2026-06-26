@@ -11,9 +11,7 @@ const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMessages,
-		...(process.env.DISCORD_MESSAGE_CONTENT_INTENT === "true"
-			? [GatewayIntentBits.MessageContent]
-			: []),
+		GatewayIntentBits.MessageContent
 	],
 	partials: [Partials.Channel, Partials.Message],
 });
@@ -23,6 +21,43 @@ const XAI_API_KEY = requiredEnv("XAI_API_KEY");
 
 const XAI_MODEL = process.env.XAI_MODEL || "grok-4.3";
 const MAX_HISTORY_MESSAGES = Number(process.env.MAX_HISTORY_MESSAGES || 12);
+
+const replacements: Record<string, string[]> = {
+    // Inclusive language
+    guys: ["everyone", "folks", "all", "team", "y'all"],
+    gals: ["everyone", "folks", "all", "team"],
+    ladies: ["everyone", "folks"],
+    gentlemen: ["everyone", "folks"],
+    dudes: ["everyone", "folks"],
+    bros: ["friends", "everyone"],
+
+    // Technical terminology
+    whitelist: ["allowlist"],
+    blacklist: ["blocklist", "denylist"],
+    "master branch": ["main branch"],
+    "master node": ["primary node"],
+    "master server": ["primary server"],
+    "master/slave": ["primary/replica", "leader/follower"],
+    master: ["main", "primary", "leader"],
+    slave: ["replica", "secondary", "follower"],
+
+    // Workplace terminology
+    manpower: ["workforce", "staffing", "personnel"],
+    "man-hours": ["person-hours", "work hours"],
+    chairman: ["chair", "chairperson"],
+    spokesman: ["spokesperson"],
+    salesman: ["salesperson", "sales representative"],
+
+    // Common corporate style-guide terms
+    grandfathered: ["legacy", "existing"],
+    "sanity check": ["quick validation", "verification"],
+    sanity: ["validation", "health"],
+    crazy: ["unexpected", "unusual"],
+    insane: ["remarkable", "unexpected"],
+    crippled: ["broken", "unavailable", "impaired"],
+    kill: ["terminate", "stop"],
+    abort: ["cancel", "stop"],
+};
 
 const SYSTEM_PROMPT = `
 You are Grok, a helpful AI assistant running inside Discord.
@@ -200,6 +235,27 @@ client.once(Events.ClientReady, () => {
 client.on(Events.MessageCreate, async (message: Message) => {
 	if (message.author.bot || !client.user) return;
 
+	const content = message.content.toLowerCase();
+
+	const entries = Object.entries(replacements).sort(
+		([a], [b]) => b.length - a.length
+	);
+
+	for (const [term, alternatives] of entries) {
+		const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+		const regex = new RegExp(`\\b${escaped}\\b`, "i");
+
+		if (!regex.test(content)) continue;
+
+		await message.reply(
+			`Hi! **"${term}"** is discouraged by our Diversity and Inclusion guidelines. ` +
+			`Consider using ${alternatives.map((x) => `"${x}"`).join(", ")} instead. ` +
+			`Thanks for helping create an inclusive and welcoming community at Meta! 💙`
+		);
+
+		return;
+	}
+
 	const mentioned = message.mentions.users.has(client.user.id);
 	const isReplyToBot =
 		message.reference?.messageId &&
@@ -227,7 +283,11 @@ client.on(Events.MessageCreate, async (message: Message) => {
 		}
 
 		const history = await getRecentHistory(message);
-		const response = await askGrok(prompt || "Please analyze the attached image.", history, imageUrls);
+		const response = await askGrok(
+			prompt || "Please analyze the attached image.",
+			history,
+			imageUrls
+		);
 
 		await sendLongReply(message, response);
 	} catch (error) {
